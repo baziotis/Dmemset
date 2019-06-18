@@ -26,7 +26,6 @@ DEALINGS IN THE SOFTWARE.
 
 import std.datetime.stopwatch;
 import Dmemset: Dmemset, Cmemset;
-import S_struct;
 import std.random;
 import std.stdio;
 import core.stdc.string;
@@ -109,7 +108,7 @@ void init(T)(T[] v)
     }
 }
 
-void verify(string name, T)(const T[] a, const int v)
+void verify(string name, T)(int j, const T[] a, const int v)
 {
     const ubyte *p = cast(const ubyte *) a.ptr;
     for(int i = 0; i < a.length; i++)
@@ -124,7 +123,7 @@ import core.stdc.stdio: printf;
 
 void test(T, size_t n)(int v)
 {
-    T[200] buf;
+    T[n + 32] buf;
     
     double TotalGBperSec1 = 0.0;
     double TotalGBperSec2 = 0.0;
@@ -139,12 +138,12 @@ void test(T, size_t n)(int v)
         ulong bytesCopied2;
         init(d);
         immutable d1 = benchmark!(T, Cmemset)(d, v, &bytesCopied1);
-        verify!("Cmemset")(d, v);
+        verify!("Cmemset")(i, d, v);
 
 
         init(d);
         immutable d2 = benchmark!(T, Dmemset)(d, v, &bytesCopied2);
-        verify!("Dmemset")(d, v);
+        verify!("Dmemset")(i, d, v);
 
         auto secs1 = (cast(double)(d1.total!"nsecs")) / 1_000_000_000.0;
         auto secs2 = (cast(double)(d2.total!"nsecs")) / 1_000_000_000.0;
@@ -181,8 +180,18 @@ void main(string[] args)
     // For performing benchmarks
     writeln("size(bytes) Cmemmove(GB/s) Dmemmove(GB/s)");
     stdout.flush();
-    // NOTE(stefanos): There was a problem with static foreach (length was always one on the left column on printing)
-    static foreach(i; 1..16) {
+    static foreach(i; 17..33) {
         test!(ubyte, i)(5);
     }
+    test!(ubyte, 100)(5);
+    test!(ubyte, 500)(5);
+    test!(ubyte, 700)(5);
+    test!(ubyte, 3434)(5);
+    test!(ubyte, 7128)(5);
+    test!(ubyte, 13908)(5);
+    test!(ubyte, 16343)(5);
+    test!(ubyte, 27897)(5);
+    test!(ubyte, 32344)(5);
+    test!(ubyte, 46830)(5);
+    test!(ubyte, 64349)(5);
 }
