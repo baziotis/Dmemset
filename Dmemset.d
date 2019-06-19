@@ -144,13 +144,14 @@ void Dmemset(T)(T[] dst, const int val)
             // Align to 32-byte boundary, let END handle
             // remaining bytes.
             and     RSI, -0x20;
+            sub     RSI, 0x20;
             cmp     RSI, 32;
             jb      END;
         MAIN_LOOP:
-            vmovdqa [RDX], YMM0;
-            add     RDX, 32;
+            vmovdqa [RDX+RSI], YMM0;
             sub     RSI, 32;
             jg      MAIN_LOOP;
+            vmovdqa [RDX], YMM0;
         END:
             vmovdqu  [RAX-0x10], YMM0;
             vzeroupper;
