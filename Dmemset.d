@@ -134,7 +134,6 @@ void Dmemset(T)(T[] dst, const int val)
             mov     RCX, RDX;
             and     RCX, 0x1f;
             vinsertf128 YMM0, YMM0, XMM0, 1;
-            je      MAIN_LOOP;
             
             vmovdqu [RDX], YMM0;
             mov     R9, 32;
@@ -142,14 +141,16 @@ void Dmemset(T)(T[] dst, const int val)
 
             add     RDX, R9;
             sub     RSI, R9;
+            // Align to 32-byte boundary, let END handle
+            // remaining bytes.
+            and     RSI, -0x20;
             cmp     RSI, 32;
             jb      END;
         MAIN_LOOP:
             vmovdqa [RDX], YMM0;
             add     RDX, 32;
             sub     RSI, 32;
-            cmp     RSI, 32;
-            jge     MAIN_LOOP;
+            jg      MAIN_LOOP;
         END:
             vmovdqu  [RAX-0x10], YMM0;
             vzeroupper;
