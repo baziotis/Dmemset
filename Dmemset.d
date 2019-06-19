@@ -45,12 +45,12 @@ void Dmemset(T)(T[] dst, const int val)
 {
     size_t n = dst.length * T.sizeof;
 
-    // NOTE(stefanos): Hope for a jump table.
-    // TODO(stefanos): Can `mixin` help?
     if(n <= 16) {
         void *d = dst.ptr;
         int v = val * 0x01010101;  // Broadcast c to all 4 bytes
-        // This switch generates weird code. It actually seems wrong.
+        // NOTE(stefanos): Hope for a jump table.
+        // TODO(stefanos): Can `mixin` help?
+        // IMPORTANT(stefanos): This switch generates weird code. It actually seems wrong.
         switch (n) {
             case 16:
                 *(cast(uint*)(d+12)) = v;
@@ -108,6 +108,7 @@ void Dmemset(T)(T[] dst, const int val)
             default: assert(0);
         }
     } else {
+        // opt_memset code.
         asm pure nothrow @nogc {
             naked;
             // Broadcast to all bytes of EDI
