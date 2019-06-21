@@ -41,12 +41,9 @@ bool isPowerOf2(T)(T x)
 }
 
 // IMPORTANT(stefanos): memset is supposed to return the dest
-void Dmemset(T)(T[] dst, const int val)
+extern(C) void Dmemset(void *d, const int val, size_t n)
 {
-    size_t n = dst.length * T.sizeof;
-
     if(n <= 16) {
-        void *d = dst.ptr;
         int v = val * 0x01010101;  // Broadcast c to all 4 bytes
         // NOTE(stefanos): Hope for a jump table.
         // TODO(stefanos): Can `mixin` help?
@@ -111,51 +108,59 @@ void Dmemset(T)(T[] dst, const int val)
         // opt_memset code.
         asm pure nothrow @nogc {
             naked;
-            // Broadcast to all bytes of EDI
-            imul    EDI, 0x01010101;
+            // Broadcast to all bytes of ESI
+            imul    ESI, 0x01010101;
             // Move it to XMM.
-            movd    XMM0, EDI;
+            movd    XMM0, ESI;
             // Broadcast it across XMM0.
             // Use this if available:
-            // vpbroadcastd XMM0, EDI;
+            // vpbroadcastd XMM0, ESI;
             pshufd  XMM0, XMM0, 0;
             // Save much used address.
-            lea     RAX, [RDX+RSI-0x10];
+            lea     RAX, [RDI+RDX-0x10];
 
-            cmp     RSI, 0x1f;
+            cmp     RDX, 0x1f;
             ja      LBIG;
 
             // <= 32
-            movdqu  [RDX], XMM0;
+            movdqu  [RDI], XMM0;
             movdqu  [RAX], XMM0;
             ret;
 
         LBIG:
-            mov     RCX, RDX;
+            mov     RCX, RDI;
             and     RCX, 0x1f;
             vinsertf128 YMM0, YMM0, XMM0, 1;
             
-            vmovdqu [RDX], YMM0;
+            vmovdqu [RDI], YMM0;
             mov     R9, 32;
             sub     R9, RCX;
 
-            add     RDX, R9;
-            sub     RSI, R9;
+            add     RDI, R9;
+            sub     RDX, R9;
             // Align to 32-byte boundary, let END handle
             // remaining bytes.
-            and     RSI, -0x20;
-            sub     RSI, 0x20;
-            cmp     RSI, 32;
+            and     RDX, -0x20;
+            sub     RDX, 0x20;
+            cmp     RDX, 32;
             jb      END;
         MAIN_LOOP:
-            vmovdqa [RDX+RSI], YMM0;
-            sub     RSI, 32;
+            vmovdqa [RDI+RDX], YMM0;
+            sub     RDX, 32;
             jg      MAIN_LOOP;
-            vmovdqa [RDX], YMM0;
+            vmovdqa [RDI], YMM0;
         END:
             vmovdqu  [RAX-0x10], YMM0;
             vzeroupper;
             ret;
         }
     }
+}
+
+void Dmemset(T)(T[] dst, const int val) {
+    Dmemset(dst.ptr, val, dst.length * T.sizeof);
+}
+
+void Dmemset(T)(T *dst, const int val) {
+    Dmemset(dst, val, T.sizeof);
 }
