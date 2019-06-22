@@ -209,6 +209,7 @@ void main(string[] args)
     writeln("size(bytes) Cmemmove(GB/s) Dmemmove(GB/s)");
     stdout.flush();
     // IMPORTANT(stefanos): This won't work as they are <= 16
+    /*
     testBasicType!(byte)(5);
     testBasicType!(ubyte)(5);
     testBasicType!(short)(5);
@@ -220,9 +221,11 @@ void main(string[] args)
     testBasicType!(float)(5);
     testBasicType!(double)(5);
     testBasicType!(real)(5);
-    static foreach(i; 1..33) {
+    static foreach(i; 16..33) {
         test!(ubyte, i)(5);
     }
+    */
+    test!(ubyte, 32)(5);
     test!(ubyte, 100)(5);
     test!(ubyte, 500)(5);
     test!(ubyte, 700)(5);
