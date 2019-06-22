@@ -24,8 +24,6 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
-import core.stdc.stdio: printf;
-
 bool isPowerOf2(T)(T x)
     if (isIntegral!T)
 {
