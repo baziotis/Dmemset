@@ -25,13 +25,27 @@ void main(string[] args)
 
     if (args[1] == "tests")
     {
-        compile = "rdmd -m64 -O -inline --build-only tests.d Dmemset.d";
-        execute = "./tests a";
+        version (x86_64)
+        {
+            compile = "rdmd -m64 -O -inline --build-only tests.d Dmemset.d";
+        }
+        else
+        {
+            compile = "rdmd -O -inline --build-only tests.d Dmemset.d";
+        }
+        execute = "./tests";
     }
     else
     {
-        compile = "rdmd -m64 -O -inline --build-only benchmarks.d Dmemset.d";
-        execute = "./benchmarks a";
+        version (x86_64)
+        {
+            compile = "rdmd -m64 -O -inline --build-only benchmarks.d Dmemset.d";
+        }
+        else
+        {
+            compile = "rdmd -O -inline --build-only benchmarks.d Dmemset.d";
+        }
+        execute = "./benchmarks";
     }
     if(run(compile) != 0)
     {
