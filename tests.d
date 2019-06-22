@@ -46,7 +46,7 @@ void escape(void* p)
     }
 }
 
-void verify(T)(int j, const ref T[] a, const int v)
+void verifyDynamicArray(T)(int j, const ref T[] a, const int v)
 {
     const ubyte *p = cast(const ubyte *) a.ptr;
     for(size_t i = 0; i < a.length * T.sizeof; i++)
@@ -55,7 +55,7 @@ void verify(T)(int j, const ref T[] a, const int v)
     }
 }
 
-void verifyType(T)(T *p, const int v)
+void verifyStaticType(T)(T *p, const int v)
 {
     const ubyte *up = cast(const ubyte *) p;
     for(size_t i = 0; i < T.sizeof; i++)
@@ -78,7 +78,7 @@ void testDynamicArray(T, size_t n)(int v)
 
         escape(d.ptr);
         Dmemset(d, v);
-        verify(i, d, v);
+        verifyDynamicArray(i, d, v);
 
     }
 }
@@ -87,11 +87,8 @@ void testStaticType(T)(const int v) {
     writeln("Test static type: ", T.stringof);
     T t;
     Dmemset(&t, v);
-    verifyType(&t, v);
+    verifyStaticType(&t, v);
 }
-
-enum Aligned = true;
-enum MisAligned = false;
 
 void main(string[] args)
 {
