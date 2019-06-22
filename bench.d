@@ -25,7 +25,7 @@ DEALINGS IN THE SOFTWARE.
 */
 
 import std.datetime.stopwatch;
-import Dmemset: Dmemset, Cmemset;
+import Dmemset: Dmemset;
 import std.random;
 import std.stdio;
 import core.stdc.string;
@@ -65,6 +65,14 @@ void clobber()
     {
         asm { "" : : : "memory"; }
     }
+}
+
+import core.stdc.string: memset;
+
+void Cmemset(T)(T[] dst, const int v)
+{
+    pragma(inline, true)
+    memset(dst.ptr, v, dst.length * T.sizeof);
 }
 
 Duration benchmark(T, alias f)(T[] dst, int v, ulong* bytesCopied)

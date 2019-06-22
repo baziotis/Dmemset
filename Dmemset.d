@@ -24,14 +24,6 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
-import core.stdc.string: memset;
-
-void Cmemset(T)(T[] dst, const int v)
-{
-    pragma(inline, true)
-    memset(dst.ptr, v, dst.length * T.sizeof);
-}
-
 import core.stdc.stdio: printf;
 
 bool isPowerOf2(T)(T x)
