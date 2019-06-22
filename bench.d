@@ -226,6 +226,7 @@ void main(string[] args)
     }
     */
     test!(ubyte, 32)(5);
+    /*
     test!(ubyte, 100)(5);
     test!(ubyte, 500)(5);
     test!(ubyte, 700)(5);
@@ -237,6 +238,7 @@ void main(string[] args)
     test!(ubyte, 32344)(5);
     test!(ubyte, 46830)(5);
     test!(ubyte, 64349)(5);
+    */
 
     testBasicType!(S!20)(5);
     testBasicType!(S!200)(5);
