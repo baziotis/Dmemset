@@ -113,10 +113,10 @@ void init(T)(T[] v)
     }
 }
 
-void verify(string name, T)(int j, const T[] a, const int v)
+void verify(string name, T)(int j, const ref T[] a, const int v)
 {
     const ubyte *p = cast(const ubyte *) a.ptr;
-    for(int i = 0; i < a.length; i++)
+    for(size_t i = 0; i < a.length * T.sizeof; i++)
     {
         assert(p[i] == cast(const ubyte)v);
     }
@@ -125,7 +125,7 @@ void verify(string name, T)(int j, const T[] a, const int v)
 void verifyBasicType(T)(T *p, const int v)
 {
     const ubyte *up = cast(const ubyte *) p;
-    for(int i = 0; i < T.sizeof; i++)
+    for(size_t i = 0; i < T.sizeof; i++)
     {
         assert(up[i] == cast(const ubyte)v);
     }
@@ -200,12 +200,21 @@ void main(string[] args)
     // For performing benchmarks
     writeln("size(bytes) Cmemmove(GB/s) Dmemmove(GB/s)");
     stdout.flush();
-    /*
+    // IMPORTANT(stefanos): This won't work as they are <= 16
+    testBasicType!(byte)(5);
+    testBasicType!(ubyte)(5);
+    testBasicType!(short)(5);
+    testBasicType!(ushort)(5);
+    testBasicType!(int)(5);
+    testBasicType!(uint)(5);
+    testBasicType!(long)(5);
+    testBasicType!(ulong)(5);
+    testBasicType!(float)(5);
+    testBasicType!(double)(5);
+    testBasicType!(real)(5);
     static foreach(i; 1..33) {
         test!(ubyte, i)(5);
     }
-    */
-    /*
     test!(ubyte, 100)(5);
     test!(ubyte, 500)(5);
     test!(ubyte, 700)(5);
@@ -217,14 +226,8 @@ void main(string[] args)
     test!(ubyte, 32344)(5);
     test!(ubyte, 46830)(5);
     test!(ubyte, 64349)(5);
-    */
 
     testBasicType!(S!20)(5);
     testBasicType!(S!200)(5);
     testBasicType!(S!2000)(5);
-    // IMPORTANT(stefanos): This won't work as they are <= 16
-    //testBasicType!(ubyte)(5);
-    //testBasicType!(ushort)(5);
-    //testBasicType!(uint)(5);
-    //testBasicType!(ulong)(5);
 }

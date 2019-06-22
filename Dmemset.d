@@ -40,124 +40,128 @@ bool isPowerOf2(T)(T x)
     return (x != 0) && ((x & (x - 1)) == 0);
 }
 
+// NOTE(stefanos): Hope for a jump table.
+// TODO(stefanos): Can `mixin` help?
+extern(C) void Dmemset_small(void *d, const int val, size_t n) {
+    const int v = val * 0x01010101;  // Broadcast c to all 4 bytes
+    switch (n) {
+        case 16:
+            *(cast(uint*)(d+12)) = v;
+            goto case 12;
+        case 12:
+            *(cast(uint*)(d+8)) = v;
+            goto case 8;
+        case 8:
+            *(cast(uint*)(d+4)) = v;
+            goto case 4;
+        case 4:
+            *(cast(uint*)d) = v;
+        return;
+    
+        case 15:
+            *(cast(uint*)(d+11)) = v;
+            goto case 11;
+        case 11:
+            *(cast(uint*)(d+7)) = v;
+            goto case 7;
+        case 7:
+            *(cast(uint*)(d+3)) = v;
+            goto case 3;
+        case 3:
+            *(cast(ushort*)(d+1)) = cast(ushort)v;
+            goto case 1;
+        case 1:
+            *(cast(ubyte*)d) = cast(ubyte)v;
+        return;
+    
+        case 14:
+            *(cast(uint*)(d+10)) = v;
+            goto case 10;
+        case 10:
+            *(cast(uint*)(d+6)) = v;
+            goto case 6;
+        case 6:
+            *(cast(uint*)(d+2)) = v;
+            goto case 2;
+        case 2:
+            *(cast(ushort*)d) = cast(ushort)v;
+        return;
+    
+        case 13:
+            *(cast(uint*)(d+9)) = v;
+            goto case 9;
+        case 9:
+            *(cast(uint*)(d+5)) = v;
+            goto case 5;
+        case 5:
+            *(cast(uint*)(d+1)) = v;
+            *(cast(ubyte*)d) = cast(ubyte)v;
+        return;
+    
+        default: assert(0);
+    }
+}
+
 // IMPORTANT(stefanos): memset is supposed to return the dest
 extern(C) void Dmemset(void *d, const int val, size_t n)
 {
-    if(n <= 16) {
-        int v = val * 0x01010101;  // Broadcast c to all 4 bytes
-        // NOTE(stefanos): Hope for a jump table.
-        // TODO(stefanos): Can `mixin` help?
-        // IMPORTANT(stefanos): This switch generates weird code. It actually seems wrong.
-        switch (n) {
-            case 16:
-                *(cast(uint*)(d+12)) = v;
-                goto case 12;
-            case 12:
-                *(cast(uint*)(d+8)) = v;
-                goto case 8;
-            case 8:
-                *(cast(uint*)(d+4)) = v;
-                goto case 4;
-            case 4:
-                *(cast(uint*)d) = v;
-            return;
-
-            case 15:
-                *(cast(uint*)(d+11)) = v;
-                goto case 11;
-            case 11:
-                *(cast(uint*)(d+7)) = v;
-                goto case 7;
-            case 7:
-                *(cast(uint*)(d+3)) = v;
-                goto case 3;
-            case 3:
-                *(cast(ushort*)(d+1)) = cast(ushort)v;
-                goto case 1;
-            case 1:
-                *(cast(ubyte*)d) = cast(ubyte)v;
-            return;
-
-            case 14:
-                *(cast(uint*)(d+10)) = v;
-                goto case 10;
-            case 10:
-                *(cast(uint*)(d+6)) = v;
-                goto case 6;
-            case 6:
-                *(cast(uint*)(d+2)) = v;
-                goto case 2;
-            case 2:
-                *(cast(ushort*)d) = cast(ushort)v;
-            return;
-
-            case 13:
-                *(cast(uint*)(d+9)) = v;
-                goto case 9;
-            case 9:
-                *(cast(uint*)(d+5)) = v;
-                goto case 5;
-            case 5:
-                *(cast(uint*)(d+1)) = v;
-                *(cast(ubyte*)d) = cast(ubyte)v;
-            return;
-
-            default: assert(0);
-        }
-    } else {
-        // opt_memset code.
-        asm pure nothrow @nogc {
-            naked;
-            // Broadcast to all bytes of ESI
-            imul    ESI, 0x01010101;
-            // Move it to XMM.
-            movd    XMM0, ESI;
-            // Broadcast it across XMM0.
-            // Use this if available:
-            // vpbroadcastd XMM0, ESI;
-            pshufd  XMM0, XMM0, 0;
-            // Save much used address.
-            lea     RAX, [RDI+RDX-0x10];
-
-            cmp     RDX, 0x1f;
-            ja      LBIG;
-
-            // <= 32
-            movdqu  [RDI], XMM0;
-            movdqu  [RAX], XMM0;
-            ret;
-
-        LBIG:
-            mov     RCX, RDI;
-            and     RCX, 0x1f;
-            vinsertf128 YMM0, YMM0, XMM0, 1;
-            
-            vmovdqu [RDI], YMM0;
-            mov     R9, 32;
-            sub     R9, RCX;
-
-            add     RDI, R9;
-            sub     RDX, R9;
-            // Align to 32-byte boundary, let END handle
-            // remaining bytes.
-            and     RDX, -0x20;
-            sub     RDX, 0x20;
-            cmp     RDX, 32;
-            jb      END;
-        MAIN_LOOP:
-            vmovdqa [RDI+RDX], YMM0;
-            sub     RDX, 32;
-            jg      MAIN_LOOP;
-            vmovdqa [RDI], YMM0;
-        END:
-            vmovdqu  [RAX-0x10], YMM0;
-            vzeroupper;
-            ret;
-        }
+    asm pure nothrow @nogc {
+        naked;
+        cmp RDX, 0x10;
+        ja LARGE;
+        call Dmemset_small;
+        ret;
+    LARGE:
+        // Broadcast to all bytes of ESI
+        imul    ESI, 0x01010101;
+        // Move it to XMM.
+        movd    XMM0, ESI;
+        // Broadcast it across XMM0.
+        // Use this if available:
+        // vpbroadcastd XMM0, ESI;
+        pshufd  XMM0, XMM0, 0;
+        // Save much used address.
+        lea     RAX, [RDI+RDX-0x10];
+    
+        cmp     RDX, 0x1f;
+        ja      LBIG;
+    
+        // <= 32
+        movdqu  [RDI], XMM0;
+        movdqu  [RAX], XMM0;
+        ret;
+    
+    LBIG:
+        mov     RCX, RDI;
+        and     RCX, 0x1f;
+        vinsertf128 YMM0, YMM0, XMM0, 1;
+        
+        vmovdqu [RDI], YMM0;
+        mov     R9, 32;
+        sub     R9, RCX;
+    
+        add     RDI, R9;
+        sub     RDX, R9;
+        // Align to 32-byte boundary, let END handle
+        // remaining bytes.
+        and     RDX, -0x20;
+        sub     RDX, 0x20;
+        cmp     RDX, 32;
+        jb      END;
+    MAIN_LOOP:
+        vmovdqa [RDI+RDX], YMM0;
+        sub     RDX, 32;
+        jg      MAIN_LOOP;
+        vmovdqa [RDI], YMM0;
+    END:
+        vmovdqu  [RAX-0x10], YMM0;
+        vzeroupper;
+        ret;
     }
 }
 
 void Dmemset(T)(T[] dst, const int val) {
+    //printf("len: %zd\n", dst.length * T.sizeof);
     Dmemset(dst.ptr, val, dst.length * T.sizeof);
 }
 
