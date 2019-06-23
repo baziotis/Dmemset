@@ -165,11 +165,29 @@ extern(C) void Dmemset_naive(ubyte *dst, const int val, size_t n) {
     }
 }
 
+import core.stdc.stdio: printf;
+
 // TODO(stefanos):
 // 1) Naive is faster for small sizes.
 // 2) Add range-checking.
 
-void Dmemset(T)(T[] dst, const int val) {
+void Dmemset(T)(T[] dst, const int val)
+{
+    version (X86_64)
+    {
+        Dmemset(dst.ptr, val, dst.length * T.sizeof);
+    }
+    else
+    {
+        Dmemset_naive(dst.ptr, val, dst.length * T.sizeof);
+    }
+}
+
+import std.traits;
+
+void Dmemset(T)(ref T dst, const int val)
+    if(isStaticArray!T)
+{
     version (X86_64)
     {
         Dmemset(dst.ptr, val, dst.length * T.sizeof);

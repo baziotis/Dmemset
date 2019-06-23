@@ -46,21 +46,34 @@ void main(string[] args)
     testStaticType!(float)(5);
     testStaticType!(double)(5);
     testStaticType!(real)(5);
-    static foreach(i; 16..33) {
-        testDynamicArray!(ubyte, i)(5);
+    static foreach(i; 1..33) {
+        testDynamicArray!(ubyte)(5, i);
+        testStaticArray!(ubyte, i)(5);
     }
-    testDynamicArray!(ubyte, 32)(5);
-    testDynamicArray!(ubyte, 100)(5);
-    testDynamicArray!(ubyte, 500)(5);
-    testDynamicArray!(ubyte, 700)(5);
-    testDynamicArray!(ubyte, 3434)(5);
-    testDynamicArray!(ubyte, 7128)(5);
-    testDynamicArray!(ubyte, 13908)(5);
-    testDynamicArray!(ubyte, 16343)(5);
-    testDynamicArray!(ubyte, 27897)(5);
-    testDynamicArray!(ubyte, 32344)(5);
-    testDynamicArray!(ubyte, 46830)(5);
-    testDynamicArray!(ubyte, 64349)(5);
+    testDynamicArray!(ubyte)(5, 32);
+    testStaticArray!(ubyte, 32)(5);
+    testDynamicArray!(ubyte)(5, 100);
+    testStaticArray!(ubyte, 100)(5);
+    testDynamicArray!(ubyte)(5, 500);
+    testStaticArray!(ubyte, 500)(5);
+    testDynamicArray!(ubyte)(5, 700);
+    testStaticArray!(ubyte, 700)(5);
+    testDynamicArray!(ubyte)(5, 3434);
+    testStaticArray!(ubyte, 3434)(5);
+    testDynamicArray!(ubyte)(5, 7128);
+    testStaticArray!(ubyte, 7128)(5);
+    testDynamicArray!(ubyte)(5, 13908);
+    testStaticArray!(ubyte, 13908)(5);
+    testDynamicArray!(ubyte)(5, 16343);
+    testStaticArray!(ubyte, 16343)(5);
+    testDynamicArray!(ubyte)(5, 27897);
+    testStaticArray!(ubyte, 27897)(5);
+    testDynamicArray!(ubyte)(5, 32344);
+    testStaticArray!(ubyte, 32344)(5);
+    testDynamicArray!(ubyte)(5, 46830);
+    testStaticArray!(ubyte, 46830)(5);
+    testDynamicArray!(ubyte)(5, 64349);
+    testStaticArray!(ubyte, 64349)(5);
 
     testStaticType!(S!20)(5);
     testStaticType!(S!200)(5);
@@ -81,7 +94,7 @@ void escape(void* p)
     }
 }
 
-void verifyDynamicArray(T)(int j, const ref T[] a, const int v)
+void verifyArray(T)(int j, const ref T[] a, const int v)
 {
     const ubyte *p = cast(const ubyte *) a.ptr;
     for(size_t i = 0; i < a.length * T.sizeof; i++)
@@ -99,9 +112,29 @@ void verifyStaticType(T)(T *p, const int v)
     }
 }
 
-void testDynamicArray(T, size_t n)(int v)
+void testDynamicArray(T)(int v, size_t n)
 {
     writeln("Test dynamic array (type, size): (", T.stringof, ", ", n, ")");
+    T[] buf;
+	buf.length = n + 32;
+    
+    enum alignments = 32;
+    size_t len = n;
+
+    foreach(i; 0..alignments)
+    {
+        auto d = buf[i..i+n];
+
+        escape(d.ptr);
+        Dmemset(d, v);
+        verifyArray(i, d, v);
+
+    }
+}
+
+void testStaticArray(T, size_t n)(int v)
+{
+    writeln("Test static array (type, size): (", T.stringof, ", ", n, ")");
     T[n + 32] buf;
     
     enum alignments = 32;
@@ -113,8 +146,7 @@ void testDynamicArray(T, size_t n)(int v)
 
         escape(d.ptr);
         Dmemset(d, v);
-        verifyDynamicArray(i, d, v);
-
+        verifyArray(i, d, v);
     }
 }
 
