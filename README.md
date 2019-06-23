@@ -17,7 +17,7 @@ This suite benchmarks `Dmemset` against `memset()` of the C Standard Library.
 
 `rdmd run benchmarks`
 
-This will compile with `-O -inline`. Refer to the `run.d` file for more info and `tests.d` to see the benchmark suite code.
+This will compile with `-O -inline`. Refer to the `run.d` file for more info and `benchmarks.d` to see the benchmark suite code.
 
 ### Contact Info
 
