@@ -159,11 +159,34 @@ extern(C) void Dmemset(void *d, const int val, size_t n)
     }
 }
 
+extern(C) void Dmemset_naive(ubyte *dst, const int val, size_t n) {
+    for (size_t i = 0; i != n; ++i) {
+        dst[i] = cast(ubyte)val;
+    }
+}
+
+// TODO(stefanos):
+// 1) Naive is faster for small sizes.
+// 2) Add range-checking.
+
 void Dmemset(T)(T[] dst, const int val) {
-    //printf("len: %zd\n", dst.length * T.sizeof);
-    Dmemset(dst.ptr, val, dst.length * T.sizeof);
+    version (X86_64)
+    {
+        Dmemset(dst.ptr, val, dst.length * T.sizeof);
+    }
+    else
+    {
+        Dmemset_naive(dst.ptr, val, dst.length * T.sizeof);
+    }
 }
 
 void Dmemset(T)(T *dst, const int val) {
-    Dmemset(dst, val, T.sizeof);
+    version (X86_64)
+    {
+        Dmemset(dst, val, T.sizeof);
+    }
+    else
+    {
+        Dmemset_naive(dst, val, T.sizeof);
+    }
 }
