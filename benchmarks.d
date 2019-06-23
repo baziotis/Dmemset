@@ -79,7 +79,6 @@ Duration benchmark(T, alias f)(T[] dst, int v, ulong* bytesCopied)
 {
     size_t iterations = 2^^20 / dst.length;
     Duration result;
-
     auto swt = StopWatch(AutoStart.yes);
     swt.reset();
     while(swt.peek().total!"msecs" < 10)

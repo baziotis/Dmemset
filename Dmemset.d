@@ -95,68 +95,102 @@ extern(C) void Dmemset_small(void *d, const int val, size_t n) {
 // IMPORTANT(stefanos): memset is supposed to return the dest
 extern(C) void Dmemset(void *d, const int val, size_t n)
 {
-    asm pure nothrow @nogc {
-        naked;
-        cmp RDX, 0x10;
-        ja LARGE;
-        call Dmemset_small;
-        ret;
-    LARGE:
-        // Broadcast to all bytes of ESI
-        imul    ESI, 0x01010101;
-        // Move it to XMM.
-        movd    XMM0, ESI;
-        // Broadcast it across XMM0.
-        // Use this if available:
-        // vpbroadcastd XMM0, ESI;
-        pshufd  XMM0, XMM0, 0;
-        // Save much used address.
-        lea     RAX, [RDI+RDX-0x10];
+	version (Windows) {
+		// Move to Posix registers due to different calling convention.
+		asm pure nothrow @nogc {
+			naked;
+			mov RDI, RCX;
+			mov ESI, EDX;
+			mov RDX, R8;
+		}
+	}
+	asm pure nothrow @nogc {
+		naked;
+		cmp RDX, 0x10;
+		ja LARGE;
+	}
+
+	version (Windows) {
+		asm pure nothrow @nogc {
+			// NOTE(stefanos): If you try to call a function, don't forget
+			// to subtract 0x20 from RSP before the call and add them after.
+			
+			// Naive implementation as the call did not work.
+			// NOTE(stefanos): Getting the low byte part of ESI (it is SIL) did not
+			// generate correct ASM.
+		LOOP:
+			mov [RDI], ESI;
+			add RDI, 1;
+			sub RDX, 1;
+			ja  LOOP;
+			ret;
+		}
+	}
+	else
+	{
+		asm pure nothrow @nogc {
+			call Dmemset_small;
+		}
+	}
+	asm pure nothrow @nogc {
+
+		ret;
+	LARGE:
+		// Broadcast to all bytes of ESI
+		imul    ESI, 0x01010101;
+		// Move it to XMM.
+		movd    XMM0, ESI;
+		// Broadcast it across XMM0.
+		// Use this if available:
+		// vpbroadcastd XMM0, ESI;
+		pshufd  XMM0, XMM0, 0;
+		// Save much used address.
+		lea     RAX, [RDI+RDX-0x10];
     
-        cmp     RDX, 0x20;
-        ja      LBIG;
+		cmp     RDX, 0x20;
+		ja      LBIG;
     
-        // <= 32
-        movdqu  [RDI], XMM0;
-        movdqu  [RAX], XMM0;
-        ret;
+		// <= 32
+		movdqu  [RDI], XMM0;
+		movdqu  [RAX], XMM0;
+		ret;
     
-    LBIG:
-        mov     RCX, RDI;
-        // RCX = RDI & 0x1f aka dst % 32
-        and     RCX, 0x1f;
-        vinsertf128 YMM0, YMM0, XMM0, 1;
+	LBIG:
+		mov     RCX, RDI;
+		// RCX = RDI & 0x1f aka dst % 32
+		and     RCX, 0x1f;
+		vinsertf128 YMM0, YMM0, XMM0, 1;
         
-        /// Reach 32-byte alignment
-        // move first 32 bytes
-        vmovdqu [RDI], YMM0;
-        // R9 = 32 - mod
-        mov     R9, 32;
-        sub     R9, RCX;
+		/// Reach 32-byte alignment
+		// move first 32 bytes
+		vmovdqu [RDI], YMM0;
+		// R9 = 32 - mod
+		mov     R9, 32;
+		sub     R9, RCX;
     
-        // dst += 32 - mod
-        add     RDI, R9;
-        // n -= 32 - mod
-        sub     RDX, R9;
+		// dst += 32 - mod
+		add     RDI, R9;
+		// n -= 32 - mod
+		sub     RDX, R9;
 
-        cmp     RDX, 32;
-        jb      END;
+		cmp     RDX, 32;
+		jb      END;
 
-        // Align to 32-byte boundary, let END handle
-        // remaining bytes.
-        and     RDX, -0x20;
-    MAIN_LOOP:
-        // NOTE(stefanos): If you move this -0x20 above, it may cause
-        // underflow.
-        vmovdqa [RDI+RDX-0x20], YMM0;
-        sub     RDX, 32;
-        jg      MAIN_LOOP;
-        vmovdqa [RDI], YMM0;
-    END:
-        vmovdqu  [RAX-0x10], YMM0;
-        vzeroupper;
-        ret;
-    }
+		// Align to 32-byte boundary, let END handle
+		// remaining bytes.
+		and     RDX, -0x20;
+	MAIN_LOOP:
+		// NOTE(stefanos): If you move this -0x20 above, it may cause
+		// underflow.
+		vmovdqa [RDI+RDX-0x20], YMM0;
+		sub     RDX, 32;
+		jg      MAIN_LOOP;
+		vmovdqa [RDI], YMM0;
+	END:
+		vmovdqu  [RAX-0x10], YMM0;
+		vzeroupper;
+		ret;
+	}
 }
 
 extern(C) void Dmemset_naive(ubyte *dst, const int val, size_t n) {
