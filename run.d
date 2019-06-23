@@ -7,6 +7,54 @@ import std.process;
 import std.stdio;
 import std.getopt;
 
+void main(string[] args)
+{
+    auto help = getopt(args);
+    if (help.helpWanted || args.length != 2 || (args[1] != "tests" && args[1] != "benchmarks"))
+    {
+        writeln("USAGE: rdmd run tests|benchmarks");
+        return;
+    }
+
+    int model = detectModel();
+    if (!model)
+    {
+        writeln("Failure to recognize OS model");
+        return;
+    }
+    string compile, execute;
+
+    if (args[1] == "tests")
+    {
+        if (model == 32)
+        {
+            compile = "rdmd -O -inline --build-only tests.d Dmemset.d";
+        }
+        else
+        {
+            compile = "rdmd -m64 -O -inline --build-only tests.d Dmemset.d";
+        }
+        execute = "./tests";
+    }
+    else
+    {
+        if (model == 32)
+        {
+            compile = "rdmd -O -inline --build-only benchmarks.d Dmemset.d";
+        }
+        else
+        {
+            compile = "rdmd -m64 -O -inline --build-only benchmarks.d Dmemset.d";
+        }
+        execute = "./benchmarks";
+    }
+    if(run(compile) != 0)
+    {
+        return;
+    }
+    run(execute);
+}
+
 int run(string cmd)
 {
     writeln(cmd);
@@ -56,52 +104,4 @@ int detectModel()
         return 32;
     
     return 0;
-}
-
-void main(string[] args)
-{
-    auto help = getopt(args);
-    if (help.helpWanted || args.length != 2 || (args[1] != "tests" && args[1] != "benchmarks"))
-    {
-        writeln("USAGE: rdmd run tests|benchmarks");
-        return;
-    }
-
-    int model = detectModel();
-    if (!model)
-    {
-        writeln("Failure to recognize OS model");
-        return;
-    }
-    string compile, execute;
-
-    if (args[1] == "tests")
-    {
-        if (model == 32)
-        {
-            compile = "rdmd -O -inline --build-only tests.d Dmemset.d";
-        }
-        else
-        {
-            compile = "rdmd -m64 -O -inline --build-only tests.d Dmemset.d";
-        }
-        execute = "./tests";
-    }
-    else
-    {
-        if (model == 32)
-        {
-            compile = "rdmd -O -inline --build-only benchmarks.d Dmemset.d";
-        }
-        else
-        {
-            compile = "rdmd -m64 -O -inline --build-only benchmarks.d Dmemset.d";
-        }
-        execute = "./benchmarks";
-    }
-    if(run(compile) != 0)
-    {
-        return;
-    }
-    run(execute);
 }

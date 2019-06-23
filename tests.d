@@ -32,6 +32,41 @@ struct S(size_t Size)
     ubyte[Size] x;
 }
 
+void main(string[] args)
+{
+
+    testStaticType!(byte)(5);
+    testStaticType!(ubyte)(5);
+    testStaticType!(short)(5);
+    testStaticType!(ushort)(5);
+    testStaticType!(int)(5);
+    testStaticType!(uint)(5);
+    testStaticType!(long)(5);
+    testStaticType!(ulong)(5);
+    testStaticType!(float)(5);
+    testStaticType!(double)(5);
+    testStaticType!(real)(5);
+    static foreach(i; 16..33) {
+        testDynamicArray!(ubyte, i)(5);
+    }
+    testDynamicArray!(ubyte, 32)(5);
+    testDynamicArray!(ubyte, 100)(5);
+    testDynamicArray!(ubyte, 500)(5);
+    testDynamicArray!(ubyte, 700)(5);
+    testDynamicArray!(ubyte, 3434)(5);
+    testDynamicArray!(ubyte, 7128)(5);
+    testDynamicArray!(ubyte, 13908)(5);
+    testDynamicArray!(ubyte, 16343)(5);
+    testDynamicArray!(ubyte, 27897)(5);
+    testDynamicArray!(ubyte, 32344)(5);
+    testDynamicArray!(ubyte, 46830)(5);
+    testDynamicArray!(ubyte, 64349)(5);
+
+    testStaticType!(S!20)(5);
+    testStaticType!(S!200)(5);
+    testStaticType!(S!2000)(5);
+}
+
 // From a very good Chandler Carruth video on benchmarking: https://www.youtube.com/watch?v=nXaxk27zwlk
 void escape(void* p)
 {
@@ -88,39 +123,4 @@ void testStaticType(T)(const int v) {
     T t;
     Dmemset(&t, v);
     verifyStaticType(&t, v);
-}
-
-void main(string[] args)
-{
-
-    testStaticType!(byte)(5);
-    testStaticType!(ubyte)(5);
-    testStaticType!(short)(5);
-    testStaticType!(ushort)(5);
-    testStaticType!(int)(5);
-    testStaticType!(uint)(5);
-    testStaticType!(long)(5);
-    testStaticType!(ulong)(5);
-    testStaticType!(float)(5);
-    testStaticType!(double)(5);
-    testStaticType!(real)(5);
-    static foreach(i; 16..33) {
-        testDynamicArray!(ubyte, i)(5);
-    }
-    testDynamicArray!(ubyte, 32)(5);
-    testDynamicArray!(ubyte, 100)(5);
-    testDynamicArray!(ubyte, 500)(5);
-    testDynamicArray!(ubyte, 700)(5);
-    testDynamicArray!(ubyte, 3434)(5);
-    testDynamicArray!(ubyte, 7128)(5);
-    testDynamicArray!(ubyte, 13908)(5);
-    testDynamicArray!(ubyte, 16343)(5);
-    testDynamicArray!(ubyte, 27897)(5);
-    testDynamicArray!(ubyte, 32344)(5);
-    testDynamicArray!(ubyte, 46830)(5);
-    testDynamicArray!(ubyte, 64349)(5);
-
-    testStaticType!(S!20)(5);
-    testStaticType!(S!200)(5);
-    testStaticType!(S!2000)(5);
 }

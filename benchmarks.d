@@ -31,9 +31,26 @@ import std.stdio;
 import core.stdc.string;
 import std.traits;
 
-struct S(size_t Size)
+
+void main(string[] args)
 {
-    ubyte[Size] x;
+    // For performing benchmarks
+    writeln("size(bytes) Cmemmove(GB/s) Dmemmove(GB/s)");
+    static foreach(i; 1..33)
+    {
+        test!(ubyte, i)(5);
+    }
+    test!(ubyte, 100)(5);
+    test!(ubyte, 500)(5);
+    test!(ubyte, 700)(5);
+    test!(ubyte, 3434)(5);
+    test!(ubyte, 7128)(5);
+    test!(ubyte, 13908)(5);
+    test!(ubyte, 16343)(5);
+    test!(ubyte, 27897)(5);
+    test!(ubyte, 32344)(5);
+    test!(ubyte, 46830)(5);
+    test!(ubyte, 64349)(5);
 }
 
 // From a very good Chandler Carruth video on benchmarking: https://www.youtube.com/watch?v=nXaxk27zwlk
@@ -148,24 +165,4 @@ void test(T, size_t n)(int v)
     }
 
     writeln(len, " ", TotalGBperSec1 / alignments, " ", TotalGBperSec2 / alignments);
-}
-
-void main(string[] args)
-{
-    // For performing benchmarks
-    writeln("size(bytes) Cmemmove(GB/s) Dmemmove(GB/s)");
-    static foreach(i; 1..33) {
-        test!(ubyte, i)(5);
-    }
-    test!(ubyte, 100)(5);
-    test!(ubyte, 500)(5);
-    test!(ubyte, 700)(5);
-    test!(ubyte, 3434)(5);
-    test!(ubyte, 7128)(5);
-    test!(ubyte, 13908)(5);
-    test!(ubyte, 16343)(5);
-    test!(ubyte, 27897)(5);
-    test!(ubyte, 32344)(5);
-    test!(ubyte, 46830)(5);
-    test!(ubyte, 64349)(5);
 }
