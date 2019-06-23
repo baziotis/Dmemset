@@ -167,9 +167,10 @@ extern(C) void Dmemset_naive(ubyte *dst, const int val, size_t n) {
 
 import core.stdc.stdio: printf;
 
-// TODO(stefanos):
-// 1) Naive is faster for small sizes.
-// 2) Add range-checking.
+// NOTE(stefanos):
+// 1) Naive is faster for very small sizes.
+// 2) Range-checking is not needed since we never
+// 	  pass an `n` (byte count) ourselves.
 
 void Dmemset(T)(T[] dst, const int val)
 {
