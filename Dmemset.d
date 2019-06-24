@@ -99,9 +99,16 @@ extern(C) void Dmemset(void *d, const int val, size_t n)
 		// Move to Posix registers due to different calling convention.
 		asm pure nothrow @nogc {
 			naked;
+			push RDX;
+			push RDI;
+			push RSI;
+			push RCX;
+			push R9;
+			push RAX;
 			mov RDI, RCX;
 			mov ESI, EDX;
 			mov RDX, R8;
+
 		}
 	}
 	asm pure nothrow @nogc {
@@ -123,7 +130,7 @@ extern(C) void Dmemset(void *d, const int val, size_t n)
 			add RDI, 1;
 			sub RDX, 1;
 			ja  LOOP;
-			ret;
+			jmp EPILOGUE;
 		}
 	}
 	else
@@ -133,8 +140,7 @@ extern(C) void Dmemset(void *d, const int val, size_t n)
 		}
 	}
 	asm pure nothrow @nogc {
-
-		ret;
+		jmp EPILOGUE;
 	LARGE:
 		// Broadcast to all bytes of ESI
 		imul    ESI, 0x01010101;
@@ -153,7 +159,7 @@ extern(C) void Dmemset(void *d, const int val, size_t n)
 		// <= 32
 		movdqu  [RDI], XMM0;
 		movdqu  [RAX], XMM0;
-		ret;
+		jmp EPILOGUE;
     
 	LBIG:
 		mov     RCX, RDI;
@@ -189,7 +195,28 @@ extern(C) void Dmemset(void *d, const int val, size_t n)
 	END:
 		vmovdqu  [RAX-0x10], YMM0;
 		vzeroupper;
-		ret;
+		jmp EPILOGUE;
+	}
+	
+	version(Windows)
+	{
+		asm pure nothrow @nogc {
+		EPILOGUE:
+			pop RAX;
+			pop	R9;
+			pop RCX;
+			pop RSI;
+			pop RDI;
+			pop RDX;
+			ret;
+		}
+	}
+	else
+	{
+		asm pure nothrow @nogc {
+		EPILOGUE:
+			ret;
+		}
 	}
 }
 
