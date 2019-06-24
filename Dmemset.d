@@ -96,15 +96,18 @@ extern(C) void Dmemset_small(void *d, const int val, size_t n) {
 extern(C) void Dmemset(void *d, const int val, size_t n)
 {
 	version (Windows) {
-		// Move to Posix registers due to different calling convention.
 		asm pure nothrow @nogc {
 			naked;
+			// Preserve registers that are used in this ASM.
+			// IMPORTANT(stefanos): This should _not_ be needed, these are caller-saved
+			// registers.
 			push RDX;
 			push RDI;
 			push RSI;
 			push RCX;
 			push R9;
 			push RAX;
+			// Move to Posix registers due to different calling convention.
 			mov RDI, RCX;
 			mov ESI, EDX;
 			mov RDX, R8;
