@@ -36,12 +36,10 @@ void main(string[] args)
 {
     // For performing benchmarks
     writeln("size(bytes) Cmemmove(GB/s) Dmemmove(GB/s)");
-	/*
     static foreach(i; 1..33)
     {
         test!(ubyte, i)(5);
     }
-	*/
     test!(ubyte, 100)(5);
     test!(ubyte, 500)(5);
     test!(ubyte, 700)(5);

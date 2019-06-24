@@ -95,23 +95,22 @@ extern(C) void Dmemset_small(void *d, const int val, size_t n) {
 // IMPORTANT(stefanos): memset is supposed to return the dest
 extern(C) void Dmemset(void *d, const int val, size_t n)
 {
+	// IMPORTANT(stefanos): For anything regarding the Windows calling convention,
+	// refer here: https://en.wikipedia.org/wiki/X86_calling_conventions#Microsoft_x64_calling_convention
+	// and be sure to follow the links in the Microsoft pages for further info.
+	// For anything regarding the calling convention used for POSIX, that is the AMD64 ABI:
+	// https://software.intel.com/sites/default/files/article/402129/mpx-linux64-abi.pdf
 	version (Windows) {
 		asm pure nothrow @nogc {
 			naked;
-			// Preserve registers that are used in this ASM.
-			// IMPORTANT(stefanos): This should _not_ be needed, these are caller-saved
-			// registers.
-			push RDX;
+			// Preserve registers that are used in this ASM. RDI, RSI are non-volatile in Windows.
 			push RDI;
 			push RSI;
-			push RCX;
-			push R9;
-			push RAX;
-			// Move to Posix registers due to different calling convention.
+			// Move to Posix registers..
 			mov RDI, RCX;
 			mov ESI, EDX;
+			// mov R11, RDX;  // save - See function call below
 			mov RDX, R8;
-
 		}
 	}
 	asm pure nothrow @nogc {
@@ -122,17 +121,34 @@ extern(C) void Dmemset(void *d, const int val, size_t n)
 
 	version (Windows) {
 		asm pure nothrow @nogc {
-			// NOTE(stefanos): If you try to call a function, don't forget
-			// to subtract 0x20 from RSP before the call and add them after.
-			
-			// Naive implementation as the call did not work.
+			// Naive implementation.
 			// NOTE(stefanos): Getting the low byte part of ESI (it is SIL) did not
-			// generate correct ASM.
+			// generate correct ASM. So, move it to EAX and use its low part.
+			mov EAX, ESI;
 		LOOP:
-			mov [RDI], ESI;
+			mov byte ptr [RDI], AL;
 			add RDI, 1;
 			sub RDX, 1;
 			ja  LOOP;
+			// Using a function call. This had the same performance with the loop
+			// above but is left as a reference for function calls.
+			/*
+			// NOTE(stefanos): The preferred way would be to have different function prologue
+			// and epilogue for small sizes (i.e. would not need to save to R11 etc.)
+			// Restore the value of RDX
+			mov RDX, R11;
+			// Set up the 32-byte shadow space
+			push RCX;
+			push RDX;
+			push R8;
+			push R9;
+			call Dmemset_small;
+			// Get back 32-byte shadow space
+			pop  R9;
+			pop R8;
+			pop RDX;
+			pop RCX;
+			*/
 			jmp EPILOGUE;
 		}
 	}
@@ -205,12 +221,8 @@ extern(C) void Dmemset(void *d, const int val, size_t n)
 	{
 		asm pure nothrow @nogc {
 		EPILOGUE:
-			pop RAX;
-			pop	R9;
-			pop RCX;
 			pop RSI;
 			pop RDI;
-			pop RDX;
 			ret;
 		}
 	}
