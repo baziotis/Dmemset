@@ -126,7 +126,7 @@ extern(C) void Dmemset(void *d, const uint val, size_t n)
             // NOTE(stefanos): Getting the low byte part of ESI (it is SIL) did not
             // generate correct ASM. So, move it to EAX and use its low part.
             mov EAX, ESI;
-LOOP:
+        LOOP:
             mov byte ptr [RDI], AL;
             add RDI, 1;
             sub RDX, 1;
@@ -163,7 +163,7 @@ LOOP:
     asm pure nothrow @nogc
     {
         jmp EPILOGUE;
-LARGE:
+    LARGE:
         // Broadcast to all bytes of ESI
         imul    ESI, 0x01010101;
         // Move it to XMM.
@@ -183,7 +183,7 @@ LARGE:
         movdqu  [RAX], XMM0;
         jmp EPILOGUE;
 
-LBIG:
+    LBIG:
         mov     RCX, RDI;
         // RCX = RDI & 0x1f aka dst % 32
         and     RCX, 0x1f;
@@ -207,14 +207,14 @@ LBIG:
         // Align to 32-byte boundary, let END handle
         // remaining bytes.
         and     RDX, -0x20;
-MAIN_LOOP:
+    MAIN_LOOP:
         // NOTE(stefanos): If you move this -0x20 above, it may cause
         // underflow.
         vmovdqa [RDI+RDX-0x20], YMM0;
         sub     RDX, 32;
         jg      MAIN_LOOP;
         vmovdqa [RDI], YMM0;
-END:
+    END:
         vmovdqu  [RAX-0x10], YMM0;
         vzeroupper;
         jmp EPILOGUE;
@@ -224,7 +224,7 @@ END:
     {
         asm pure nothrow @nogc
         {
-EPILOGUE:
+        EPILOGUE:
             pop RSI;
             pop RDI;
             ret;
@@ -234,7 +234,7 @@ EPILOGUE:
     {
         asm pure nothrow @nogc
         {
-EPILOGUE:
+        EPILOGUE:
             ret;
         }
     }
