@@ -24,17 +24,13 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
-bool isPowerOf2(T)(T x)
-    if (isIntegral!T)
-{
-    return (x != 0) && ((x & (x - 1)) == 0);
-}
-
 // NOTE(stefanos): Hope for a jump table.
 // TODO(stefanos): Can `mixin` help?
-extern(C) void Dmemset_small(void *d, const int val, size_t n) {
+extern(C) void Dmemset_small(void *d, const int val, size_t n)
+{
     const int v = val * 0x01010101;  // Broadcast c to all 4 bytes
-    switch (n) {
+    switch (n)
+    {
         case 16:
             *(cast(uint*)(d+12)) = v;
             goto case 12;
@@ -100,8 +96,10 @@ extern(C) void Dmemset(void *d, const int val, size_t n)
 	// and be sure to follow the links in the Microsoft pages for further info.
 	// For anything regarding the calling convention used for POSIX, that is the AMD64 ABI:
 	// https://software.intel.com/sites/default/files/article/402129/mpx-linux64-abi.pdf
-	version (Windows) {
-		asm pure nothrow @nogc {
+	version (Windows)
+    {
+		asm pure nothrow @nogc
+        {
 			naked;
 			// Preserve registers that are used in this ASM. RDI, RSI are non-volatile in Windows.
 			push RDI;
@@ -113,14 +111,17 @@ extern(C) void Dmemset(void *d, const int val, size_t n)
 			mov RDX, R8;
 		}
 	}
-	asm pure nothrow @nogc {
+	asm pure nothrow @nogc
+    {
 		naked;
 		cmp RDX, 0x10;
 		ja LARGE;
 	}
 
-	version (Windows) {
-		asm pure nothrow @nogc {
+	version (Windows)
+    {
+		asm pure nothrow @nogc
+        {
 			// Naive implementation.
 			// NOTE(stefanos): Getting the low byte part of ESI (it is SIL) did not
 			// generate correct ASM. So, move it to EAX and use its low part.
@@ -154,11 +155,13 @@ extern(C) void Dmemset(void *d, const int val, size_t n)
 	}
 	else
 	{
-		asm pure nothrow @nogc {
+		asm pure nothrow @nogc
+        {
 			call Dmemset_small;
 		}
 	}
-	asm pure nothrow @nogc {
+	asm pure nothrow @nogc
+    {
 		jmp EPILOGUE;
 	LARGE:
 		// Broadcast to all bytes of ESI
@@ -219,7 +222,8 @@ extern(C) void Dmemset(void *d, const int val, size_t n)
 	
 	version(Windows)
 	{
-		asm pure nothrow @nogc {
+		asm pure nothrow @nogc
+        {
 		EPILOGUE:
 			pop RSI;
 			pop RDI;
@@ -228,20 +232,21 @@ extern(C) void Dmemset(void *d, const int val, size_t n)
 	}
 	else
 	{
-		asm pure nothrow @nogc {
+		asm pure nothrow @nogc
+        {
 		EPILOGUE:
 			ret;
 		}
 	}
 }
 
-extern(C) void Dmemset_naive(ubyte *dst, const int val, size_t n) {
-    for (size_t i = 0; i != n; ++i) {
+extern(C) void Dmemset_naive(ubyte *dst, const int val, size_t n)
+{
+    for (size_t i = 0; i != n; ++i)
+    {
         dst[i] = cast(ubyte)val;
     }
 }
-
-import core.stdc.stdio: printf;
 
 // NOTE(stefanos):
 // 1) Naive is faster for very small sizes.
