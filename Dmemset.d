@@ -24,11 +24,12 @@
    DEALINGS IN THE SOFTWARE.
 */
 
-// NOTE(stefanos): Hope for a jump table.
 // TODO(stefanos): Can `mixin` help?
-extern(C) void Dmemset_small(void *d, const int val, size_t n)
+// NOTE(stefanos): The code generated, even with a jump table, is suboptimal. There
+// seems to be a lot of boilerplate.
+extern(C) void Dmemset_small(void *d, const uint val, size_t n)
 {
-    const int v = val * 0x01010101;  // Broadcast c to all 4 bytes
+    const uint v = val * 0x01010101;  // Broadcast c to all 4 bytes
     switch (n)
     {
         case 16:
@@ -88,7 +89,7 @@ extern(C) void Dmemset_small(void *d, const int val, size_t n)
     }
 }
 
-extern(C) void Dmemset(void *d, const int val, size_t n)
+extern(C) void Dmemset(void *d, const uint val, size_t n)
 {
     // IMPORTANT(stefanos): For anything regarding the Windows calling convention,
     // refer here: https://en.wikipedia.org/wiki/X86_calling_conventions#Microsoft_x64_calling_convention
@@ -239,11 +240,11 @@ EPILOGUE:
     }
 }
 
-extern(C) void Dmemset_naive(ubyte *dst, const int val, size_t n)
+extern(C) void Dmemset_naive(ubyte *dst, const ubyte val, size_t n)
 {
     for (size_t i = 0; i != n; ++i)
     {
-        dst[i] = cast(ubyte)val;
+        dst[i] = val;
     }
 }
 
@@ -252,40 +253,34 @@ extern(C) void Dmemset_naive(ubyte *dst, const int val, size_t n)
 // 2) Range-checking is not needed since we never
 // 	  pass an `n` (byte count) ourselves.
 
-void Dmemset(T)(T[] dst, const int val)
-{
-    version (X86_64)
-    {
-        Dmemset(dst.ptr, val, dst.length * T.sizeof);
-    }
-    else
-    {
-        Dmemset_naive(dst.ptr, val, dst.length * T.sizeof);
-    }
-}
-
 import std.traits;
+import std.stdio;
 
-void Dmemset(T)(ref T dst, const int val)
-    if(isStaticArray!T)
+void Dmemset(T)(ref T dst, const ubyte val)
 {
+    const uint v = cast(int)val;
     version (X86_64)
     {
-        Dmemset(dst.ptr, val, dst.length * T.sizeof);
+        static if (isArray!T)
+        {
+            // NOTE(stefanos): We need to get the element type of the array.
+            Dmemset(dst.ptr, v, dst.length * typeof(dst[0]).sizeof);
+        }
+        else
+        {
+            Dmemset(&dst, v, T.sizeof);
+        }
     }
     else
     {
-        Dmemset_naive(dst.ptr, val, dst.length * T.sizeof);
-    }
-}
-
-void Dmemset(T)(T *dst, const int val) {
-    version (X86_64)
-    {
-        Dmemset(dst, val, T.sizeof);
-    }
-    else
-    {
-        Dmemset_naive(dst, val, T.sizeof);
+        static if (isArray!T)
+        {
+            // NOTE(stefanos): We need to get the element type of the array.
+            Dmemset_naive(dst.ptr, val, dst.length * typeof(dst[0]).sizeof);
+        }
+        else
+        {
+            Dmemset_naive(&dst, val, T.sizeof);
+        }
     }
 }

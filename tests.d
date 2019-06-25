@@ -46,6 +46,7 @@ void main(string[] args)
     testStaticType!(float)(5);
     testStaticType!(double)(5);
     testStaticType!(real)(5);
+    testDynamicArray!(ubyte)(5, 3);
     static foreach(i; 1..33) {
         testDynamicArray!(ubyte)(5, i);
         testStaticArray!(ubyte, i)(5);
@@ -94,25 +95,25 @@ void escape(void* p)
     }
 }
 
-void verifyArray(T)(int j, const ref T[] a, const int v)
+void verifyArray(T)(int j, const ref T[] a, const ubyte v)
 {
     const ubyte *p = cast(const ubyte *) a.ptr;
     for(size_t i = 0; i < a.length * T.sizeof; i++)
     {
-        assert(p[i] == cast(const ubyte)v);
+        assert(p[i] == v);
     }
 }
 
-void verifyStaticType(T)(T *p, const int v)
+void verifyStaticType(T)(const ref T t, const ubyte v)
 {
-    const ubyte *up = cast(const ubyte *) p;
+    const ubyte *p = cast(const ubyte *) &t;
     for(size_t i = 0; i < T.sizeof; i++)
     {
-        assert(up[i] == cast(const ubyte)v);
+        assert(p[i] == v);
     }
 }
 
-void testDynamicArray(T)(int v, size_t n)
+void testDynamicArray(T)(const ubyte v, size_t n)
 {
     writeln("Test dynamic array (type, size): (", T.stringof, ", ", n, ")");
     T[] buf;
@@ -128,11 +129,10 @@ void testDynamicArray(T)(int v, size_t n)
         escape(d.ptr);
         Dmemset(d, v);
         verifyArray(i, d, v);
-
     }
 }
 
-void testStaticArray(T, size_t n)(int v)
+void testStaticArray(T, size_t n)(const ubyte v)
 {
     writeln("Test static array (type, size): (", T.stringof, ", ", n, ")");
     T[n + 32] buf;
@@ -150,9 +150,10 @@ void testStaticArray(T, size_t n)(int v)
     }
 }
 
-void testStaticType(T)(const int v) {
+void testStaticType(T)(const ubyte v) {
     writeln("Test static type: ", T.stringof);
     T t;
-    Dmemset(&t, v);
-    verifyStaticType(&t, v);
+    escape(&t);
+    Dmemset(t, v);
+    verifyStaticType(t, v);
 }

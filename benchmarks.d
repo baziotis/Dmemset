@@ -31,25 +31,27 @@ import std.stdio;
 import core.stdc.string;
 import std.traits;
 
+// NOTE(stefanos): For benchmarking, we're concerning ourselves only
+// with the `ubyte` type. That is for simpler code as the target here
+// is to test speed. You can refer to tests.d for correctness testing.
 
 void main(string[] args)
 {
     writeln("size(bytes) Cmemmove(GB/s) Dmemmove(GB/s)");
-    static foreach(i; 1..33)
+    static foreach(i; 1..256)
     {
-        test!(ubyte, i)(5);
+        test!(i)(5);
     }
-    test!(ubyte, 100)(5);
-    test!(ubyte, 500)(5);
-    test!(ubyte, 700)(5);
-    test!(ubyte, 3434)(5);
-    test!(ubyte, 7128)(5);
-    test!(ubyte, 13908)(5);
-    test!(ubyte, 16343)(5);
-    test!(ubyte, 27897)(5);
-    test!(ubyte, 32344)(5);
-    test!(ubyte, 46830)(5);
-    test!(ubyte, 64349)(5);
+    test!(500)(5);
+    test!(700)(5);
+    test!(3434)(5);
+    test!(7128)(5);
+    test!(13908)(5);
+    test!(16343)(5);
+    test!(27897)(5);
+    test!(32344)(5);
+    test!(46830)(5);
+    test!(64349)(5);
 }
 
 // From a very good Chandler Carruth video on benchmarking: https://www.youtube.com/watch?v=nXaxk27zwlk
@@ -66,15 +68,14 @@ void escape(void* p)
     }
 }
 
-import core.stdc.string: memset;
-
-void Cmemset(T)(T[] dst, const int v)
+void Cmemset(ref ubyte[] dst, const ubyte v)
 {
+    import core.stdc.string: memset;
     pragma(inline, true)
-        memset(dst.ptr, v, dst.length * T.sizeof);
+    memset(dst.ptr, v, dst.length);
 }
 
-Duration benchmark(T, alias f)(T[] dst, int v, ulong* bytesCopied)
+Duration benchmark(alias f)(ref ubyte[] dst, const ubyte v, ulong* bytesCopied)
 {
     size_t iterations = 2^^20 / dst.length;
     Duration result;
@@ -96,41 +97,26 @@ Duration benchmark(T, alias f)(T[] dst, int v, ulong* bytesCopied)
     return result;
 }
 
-void init(T)(T[] v)
+void init(ref ubyte[] v)
 {
-    static if (is (T == float))
+
+    for(int i = 0; i < v.length; i++)
     {
-        v = uniform(0.0f, 9_999_999.0f);
-    }
-    else static if (is(T == double))
-    {
-        v = uniform(0.0, 9_999_999.0);
-    }
-    else static if (is(T == real))
-    {
-        v = uniform(0.0L, 9_999_999.0L);
-    }
-    else
-    {
-        for(int i = 0; i < v.length; i++)
-        {
-            v[i] = uniform!byte;
-        }
+        v[i] = uniform!ubyte;
     }
 }
 
-void verify(string name, T)(int j, const ref T[] a, const int v)
+void verify(string name)(int j, const ref ubyte[] a, const ubyte v)
 {
-    const ubyte *p = cast(const ubyte *) a.ptr;
-    for(size_t i = 0; i < a.length * T.sizeof; i++)
+    for(size_t i = 0; i < a.length; i++)
     {
-        assert(p[i] == cast(const ubyte)v);
+        assert(a.ptr[i] == v);
     }
 }
 
-void test(T, size_t n)(int v)
+void test(size_t n)(ubyte v)
 {
-    T[n + 32] buf;
+    ubyte[n + 32] buf;
 
     double TotalGBperSec1 = 0.0;
     double TotalGBperSec2 = 0.0;
@@ -144,12 +130,12 @@ void test(T, size_t n)(int v)
         ulong bytesCopied1;
         ulong bytesCopied2;
         init(d);
-        immutable d1 = benchmark!(T, Cmemset)(d, v, &bytesCopied1);
+        immutable d1 = benchmark!(Cmemset)(d, v, &bytesCopied1);
         verify!("Cmemset")(i, d, v);
 
 
         init(d);
-        immutable d2 = benchmark!(T, Dmemset)(d, v, &bytesCopied2);
+        immutable d2 = benchmark!(Dmemset)(d, v, &bytesCopied2);
         verify!("Dmemset")(i, d, v);
 
         auto secs1 = (cast(double)(d1.total!"nsecs")) / 1_000_000_000.0;
