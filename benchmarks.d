@@ -38,12 +38,10 @@ import std.traits;
 void main(string[] args)
 {
     writeln("size(bytes) Cmemmove(GB/s) Dmemmove(GB/s)");
-    /*
     static foreach(i; 1..256)
     {
         test!(i)(5);
     }
-    */
     test!(500)(5);
     test!(700)(5);
     test!(3434)(5);
