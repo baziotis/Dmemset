@@ -28,7 +28,7 @@ You can choose to compile with LDC or DMD.
 This will compile with `-O3`.
 
 ### DMD
-This will compile with `rdmd` and `-O3 -inline`.
+This will compile with `rdmd` and `-O -inline`.
 
 ### Contact Info
 
