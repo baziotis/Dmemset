@@ -5,19 +5,30 @@ This is part of my [Google Summer of Code project](https://summerofcode.withgoog
 It is a public repository for the work on the `memset()` replacement.
 
 ## Compile and Run
-### Run the test suite
-This suites verifies that `Dmemset` works correctly.
 
-`rdmd run tests`
+The `run.d` takes 2 command-line options. One is what suite to run and the other is the compiler of choice (currently
+only DMD and LDC).
+
+`rdmd run tests|benchmarks ldc|dmd`
+
+### Run the test suite
+With the option `tests`. This suites verifies that `Dmemset` works correctly.
 
 Refer to the `run.d` file for more info and `tests.d` to see the test suite code.
 
 ### Run the benchmark suite
-This suite benchmarks `Dmemset` against `memset()` of the C Standard Library.
-
-`rdmd run benchmarks`
+With the option `benchmarks`. This suite benchmarks `Dmemset` against `memset()` of the C Standard Library.
 
 Refer to the `run.d` file for more info and `benchmarks.d` to see the benchmark suite code.
+
+## Compiler choice
+You can choose to compile with LDC or DMD.
+
+### LDC
+This will compile with `-O3`.
+
+### DMD
+This will compile with `rdmd` and `-O3 -inline`.
 
 ### Contact Info
 
