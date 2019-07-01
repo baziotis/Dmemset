@@ -5,7 +5,19 @@ This is part of my [Google Summer of Code project](https://summerofcode.withgoog
 It is a public repository for the work on the `memset()` replacement.
 
 ## Compile and Run
-`dmd bench.d Dmemset.d -O -inline && ./bench average` (DMD - Optimized and Inlined)
+### Run the test suite
+This suites verifies that `Dmemset` works correctly.
+
+`rdmd run tests`
+
+Refer to the `run.d` file for more info and `tests.d` to see the test suite code.
+
+### Run the benchmark suite
+This suite benchmarks `Dmemset` against `memset()` of the C Standard Library.
+
+`rdmd run benchmarks`
+
+Refer to the `run.d` file for more info and `benchmarks.d` to see the benchmark suite code.
 
 ### Contact Info
 
